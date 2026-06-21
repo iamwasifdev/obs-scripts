@@ -68,7 +68,7 @@ ws.addEventListener('message', (event) => {
         state = 'creating';
         ws.send(request('CreateInput', {
           inputName: sourceName,
-          inputKind: 'text_ft2_source',
+          inputKind: 'text_ft2_source_v2',
           inputSettings: {
             text: newText,
             font: { face: 'Arial', size: 72, flags: 0 }
@@ -92,7 +92,7 @@ ws.addEventListener('message', (event) => {
         state = 'creating';
         ws.send(request('CreateInput', {
           inputName: sourceName,
-          inputKind: 'text_ft2_source',
+          inputKind: 'text_ft2_source_v2',
           inputSettings: {
             text: newText,
             font: { face: 'Arial', size: 72, flags: 0 }
