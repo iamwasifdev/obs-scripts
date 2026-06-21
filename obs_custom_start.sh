@@ -17,7 +17,7 @@ if [ -z "$TITLE" ]; then
     exit 0
 fi
 
-# 4. Update the text on your screen to your new title
+# 4. Update the YouTube stream title
 bash /home/superman/bashScripts/obs_set_text.sh "$TITLE"
 
 # 5. Switch to your Main scene

@@ -1,18 +1,17 @@
 #!/bin/bash
-TEXT="$1"
+TITLE="$1"
 
-if [ -z "$TEXT" ]; then
-  echo "Usage: obs_set_text.sh <text>"
+if [ -z "$TITLE" ]; then
+  echo "Usage: obs_set_text.sh <stream-title>"
   exit 1
 fi
 
-# Method 1: WebSocket direct (works with OBS 32)
-node /home/superman/bashScripts/obs_set_text.js "StreamTitle" "$TEXT"
+# Try YouTube API to set broadcast title
+node /home/superman/bashScripts/youtube_set_title.js "$TITLE"
 if [ $? -eq 0 ]; then
+  notify-send "YouTube" "Stream title set to: $TITLE"
   exit 0
 fi
 
-# Method 2: File-based fallback (if WebSocket fails)
-echo "$TEXT" > /tmp/obs_StreamTitle.txt
-echo "Title written to /tmp/obs_StreamTitle.txt: $TEXT"
-notify-send "OBS Control" "Stream title set to: $TEXT"
+echo "YouTube API not set up yet. Run: node /home/superman/bashScripts/youtube_setup.js"
+exit 1
