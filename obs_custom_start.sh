@@ -18,7 +18,7 @@ if [ -z "$TITLE" ]; then
 fi
 
 # 4. Update the text on your screen to your new title
-bash /home/superman/bashScripts/obs_set_text.sh "$TITLE" "StreamTitle"
+bash /home/superman/bashScripts/obs_set_text.sh "$TITLE"
 
 # 5. Switch to your Main scene
 obs-cmd scene switch "Main"
