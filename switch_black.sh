@@ -1,7 +1,7 @@
 #!/bin/bash
 export OBS_WEBSOCKET_URL="obsws://localhost:4455/b36IvaV1pBHX5eaP"
 
-CURRENT=$(obs-cmd scene current | tr -d '"')
+CURRENT=$(obs-cmd scene current | awk '{print $NF}')
 if [ "$CURRENT" = "Black" ]; then
   obs-cmd scene switch "Main"
   obs-cmd audio unmute "Mic/Aux"
