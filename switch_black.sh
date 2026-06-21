@@ -7,10 +7,12 @@ if [ -f "$STATE_FILE" ]; then
   rm "$STATE_FILE"
   obs-cmd scene switch "Main"
   obs-cmd audio unmute "Mic/Aux"
-  notify-send "📺 OBS Control" "Main"
+  obs-cmd audio unmute "Desktop Audio"
+  notify-send "📺 OBS Control" "Back to Main - Audio Restored"
 else
   touch "$STATE_FILE"
   obs-cmd scene switch "Black"
   obs-cmd audio mute "Mic/Aux"
-  notify-send "📺 OBS Control" "BRB"
+  obs-cmd audio mute "Desktop Audio"
+  notify-send "📺 OBS Control" "BRB - All Audio Muted"
 fi
