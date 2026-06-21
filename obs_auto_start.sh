@@ -13,7 +13,7 @@ fi
 DEFAULT_TITLE="Coding and Fun"
 
 # 4. Set the text on your screen to your Default Title
-bash /home/superman/bashScripts/obs_set_text.sh "$DEFAULT_TITLE"
+node /home/superman/bashScripts/obs_set_text.js "StreamTitle" "$DEFAULT_TITLE"
 
 # 5. Switch to your Main scene
 obs-cmd scene switch "Main"

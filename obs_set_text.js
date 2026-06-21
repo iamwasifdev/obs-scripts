@@ -25,25 +25,33 @@ if (!sourceName || !newText) {
 
 let state = 'hello';
 let targetScene = 'Main';
+let serverRpcVersion = 1;
 
 const ws = new WebSocket(`ws://${HOST}:${PORT}`);
 
-ws.on('message', (raw) => {
-  const msg = JSON.parse(raw.toString());
+ws.addEventListener('open', () => {});
+
+ws.addEventListener('message', (event) => {
+  let msg;
+  try {
+    msg = JSON.parse(event.data.toString());
+  } catch (e) {
+    console.error('Failed to parse message:', event.data.toString());
+    return;
+  }
   const d = msg.d;
 
   if (msg.op === 0) {
-    // Hello
+    serverRpcVersion = d.rpcVersion || 1;
     if (d.authentication) {
       const { challenge, salt } = d.authentication;
       const secret = base64(sha256(PASSWORD + salt));
       const auth = base64(sha256(secret + challenge));
-      ws.send(JSON.stringify({ op: 1, d: { rpcVersion: 1, authentication: auth } }));
+      ws.send(JSON.stringify({ op: 1, d: { rpcVersion: serverRpcVersion, authentication: auth } }));
     } else {
-      ws.send(JSON.stringify({ op: 1, d: { rpcVersion: 1 } }));
+      ws.send(JSON.stringify({ op: 1, d: { rpcVersion: serverRpcVersion } }));
     }
   } else if (msg.op === 2) {
-    // Identified - now get input list
     state = 'listing';
     ws.send(request('GetInputList'));
   } else if (msg.op === 7) {
@@ -61,41 +69,49 @@ ws.on('message', (raw) => {
         ws.send(request('CreateInput', {
           inputName: sourceName,
           inputKind: 'text_ft2_source',
-          inputSettings: { text: newText, font: { face: 'Arial', size: 72, flags: 0 } },
+          inputSettings: {
+            text: newText,
+            font: { face: 'Arial', size: 72, flags: 0 }
+          },
           sceneName: targetScene
         }));
       }
     } else if (state === 'creating') {
       if (d.requestStatus?.result === true) {
-        console.log(`Created "${sourceName}" with text: ${newText}`);
+        console.log('Created "' + sourceName + '" with text: ' + newText);
       } else {
-        // maybe scene-specific creation failed, try without scene
-        state = 'setting';
-        ws.send(request('SetInputSettings', {
-          inputName: sourceName,
-          inputSettings: { text: newText }
-        }));
-        return;
+        console.error('Create failed:', d.requestStatus?.comment || 'unknown error');
       }
       ws.close();
       process.exit(d.requestStatus?.result === true ? 0 : 1);
     } else if (state === 'setting') {
       if (d.requestStatus?.result === true) {
-        console.log(`Set "${sourceName}" text to: ${newText}`);
+        console.log('Set "' + sourceName + '" text to: ' + newText);
       } else {
-        console.error('Failed:', d.requestStatus?.comment || 'unknown error');
+        console.error('Set failed:', d.requestStatus?.comment || 'unknown error');
+        state = 'creating';
+        ws.send(request('CreateInput', {
+          inputName: sourceName,
+          inputKind: 'text_ft2_source',
+          inputSettings: {
+            text: newText,
+            font: { face: 'Arial', size: 72, flags: 0 }
+          },
+          sceneName: targetScene
+        }));
+        return;
       }
       ws.close();
-      process.exit(d.requestStatus?.result === true ? 0 : 1);
+      process.exit(0);
     }
   }
 });
 
-ws.on('error', (err) => {
-  console.error('WebSocket error:', err.message);
+ws.addEventListener('error', (err) => {
+  console.error('WebSocket error:', err.message || err);
   process.exit(1);
 });
 
-ws.on('close', () => {
+ws.addEventListener('close', () => {
   if (reqId === 0) process.exit(1);
 });

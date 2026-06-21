@@ -16,31 +16,36 @@ function request(type, data) {
   });
 }
 
-const mode = process.argv[2]; // 'list', 'get', or 'set'
+const mode = process.argv[2];
 const sourceName = process.argv[3];
 const newText = process.argv[4];
+let serverRpcVersion = 1;
 
+if (!mode || (mode !== 'list' && mode !== 'get' && mode !== 'set')) {
+  console.error('Usage: obs_diag.js <list|get|set> [sourceName] [text]');
+  process.exit(1);
+}
+
+let state = 'hello';
 const ws = new WebSocket(`ws://${HOST}:${PORT}`);
 
-ws.on('open', () => {});
+ws.addEventListener('open', () => {});
 
-ws.on('message', (raw) => {
-  const msg = JSON.parse(raw.toString());
-  const op = msg.op;
+ws.addEventListener('message', (event) => {
+  const msg = JSON.parse(event.data.toString());
   const d = msg.d;
 
-  if (op === 0) {
-    // Hello
+  if (msg.op === 0) {
+    serverRpcVersion = d.rpcVersion || 1;
     if (d.authentication) {
       const { challenge, salt } = d.authentication;
       const secret = base64(sha256(PASSWORD + salt));
       const auth = base64(sha256(secret + challenge));
-      ws.send(JSON.stringify({ op: 1, d: { rpcVersion: 1, authentication: auth } }));
+      ws.send(JSON.stringify({ op: 1, d: { rpcVersion: serverRpcVersion, authentication: auth } }));
     } else {
-      ws.send(JSON.stringify({ op: 1, d: { rpcVersion: 1 } }));
+      ws.send(JSON.stringify({ op: 1, d: { rpcVersion: serverRpcVersion } }));
     }
-  } else if (op === 2) {
-    // Identified
+  } else if (msg.op === 2) {
     if (mode === 'list') {
       ws.send(request('GetInputList'));
     } else if (mode === 'get') {
@@ -52,24 +57,19 @@ ws.on('message', (raw) => {
         inputName: sourceName,
         inputSettings: { text: newText }
       }));
-    } else {
-      console.error('Usage: obs_diag.js <list|get|set> [sourceName] [text]');
-      ws.close();
-      process.exit(1);
     }
-  } else if (op === 7) {
-    // RequestResponse
+  } else if (msg.op === 7) {
     console.log(JSON.stringify(d, null, 2));
     ws.close();
-    process.exit(d.requestStatus?.result === true ? 0 : 1);
+    process.exit(d.requestStatus?.result === false ? 1 : 0);
   }
 });
 
-ws.on('error', (err) => {
-  console.error('WebSocket error:', err.message);
+ws.addEventListener('error', (err) => {
+  console.error('WebSocket error:', err.message || err);
   process.exit(1);
 });
 
-ws.on('close', () => {
+ws.addEventListener('close', () => {
   if (reqId === 0) process.exit(1);
 });
